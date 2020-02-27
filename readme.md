@@ -13,10 +13,12 @@ The utility can be installed when Go is available using:
 go get github.com/sanderhahn/multipass-hosts
 ```
 
-The tool needs to be executed using `sudo` so that it is able to overwrite the `/etc/hosts` file:
+The tool needs to be executed as root so that it is able to overwrite the `/etc/hosts` file:
 
 ```bash
-sudo `which multipass-hosts`
+# always run multipass-hosts as root
+sudo chmod +s `which multipass-hosts`
+sudo chown root:root `which multipass-hosts`
 ```
 
 ## Aliasses
