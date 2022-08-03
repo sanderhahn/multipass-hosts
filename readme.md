@@ -21,6 +21,8 @@ sudo chmod +s `which multipass-hosts`
 sudo chown root:root `which multipass-hosts`
 ```
 
+On Windows it updates the `C:\Windows\System32\drivers\etc\hosts` file when executed as Administrator.
+
 ## Aliasses
 
 This is possible by using aliasses that are read from the `$HOME/.multipass-hosts.json` file using the format:
@@ -41,4 +43,4 @@ This is possible by using aliasses that are read from the `$HOME/.multipass-host
 ## Implementation
 
 The tool executes `multipass list --format json` and extracts the name and ipv4 fields.
-These ip addresses are added into the `/etc/hosts` file surrounded with comments that mark the start and end of the block.
+These ip addresses are added into the `hosts` file surrounded with comments that mark the start and end of the block.
