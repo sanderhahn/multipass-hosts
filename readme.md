@@ -10,7 +10,7 @@ When multipass assigns new ip addresses to vms you can rerun the tool to update 
 The utility can be installed when Go is available using:
 
 ```bash
-go get github.com/sanderhahn/multipass-hosts
+go install github.com/sanderhahn/multipass-hosts@latest
 ```
 
 The tool needs to be executed as root so that it is able to overwrite the `/etc/hosts` file:
