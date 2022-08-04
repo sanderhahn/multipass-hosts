@@ -50,8 +50,11 @@ func generateBlock(list *multipassList) string {
 	buf := &bytes.Buffer{}
 	buf.WriteString(startMarker)
 	for _, entry := range list.List {
-		for _, ip := range entry.IPv4 {
-			fmt.Fprintf(buf, "%-15s %s%s", ip, entry.Name, lineBreak)
+		for i, ip := range entry.IPv4 {
+			if i == 0 {
+				// only output first ip address
+				fmt.Fprintf(buf, "%s %s%s", ip, entry.Name, lineBreak)
+			}
 		}
 	}
 	buf.WriteString(endMarker)
