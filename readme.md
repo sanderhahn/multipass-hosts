@@ -21,7 +21,7 @@ sudo chmod +s `which multipass-hosts`
 sudo chown root:root `which multipass-hosts`
 ```
 
-On Windows it updates the `C:\Windows\System32\drivers\etc\hosts` file when executed as Administrator.
+On Windows it updates the `$Env:SystemRoot\System32\drivers\etc\hosts` file when executed as Administrator.
 
 ## Aliasses
 

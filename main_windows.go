@@ -1,4 +1,9 @@
 package main
 
-const HostsFile = `C:\Windows\System32\drivers\etc\hosts`
-const LineBreak = "\r\n"
+import "os"
+
+const lineBreak = "\r\n"
+
+func getHostsFile() string {
+	return os.Getenv("SystemRoot") + `\System32\drivers\etc\hosts`
+}

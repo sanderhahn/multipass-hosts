@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	startMarker = "#multipass-hosts" + LineBreak
-	endMarker   = "#/multipass-hosts" + LineBreak
+	startMarker = "#multipass-hosts" + lineBreak
+	endMarker   = "#/multipass-hosts" + lineBreak
 	configFile  = ".multipass-hosts.json"
 )
 
@@ -51,7 +51,7 @@ func generateBlock(list *multipassList) string {
 	buf.WriteString(startMarker)
 	for _, entry := range list.List {
 		for _, ip := range entry.IPv4 {
-			fmt.Fprintf(buf, "%-15s %s%s", ip, entry.Name, LineBreak)
+			fmt.Fprintf(buf, "%-15s %s%s", ip, entry.Name, lineBreak)
 		}
 	}
 	buf.WriteString(endMarker)
@@ -59,7 +59,8 @@ func generateBlock(list *multipassList) string {
 }
 
 func readHostsFile() string {
-	hostsBytes, err := ioutil.ReadFile(HostsFile)
+	hostsFile := getHostsFile()
+	hostsBytes, err := ioutil.ReadFile(hostsFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -67,9 +68,10 @@ func readHostsFile() string {
 }
 
 func writeHostsFile(hosts string) {
-	err := ioutil.WriteFile(HostsFile, []byte(hosts), 0o644)
+	hostsFile := getHostsFile()
+	err := ioutil.WriteFile(hostsFile, []byte(hosts), 0o644)
 	if err != nil {
-		log.Printf("Failed to write %s content:\n%s", HostsFile, hosts)
+		log.Printf("Failed to write %s content:\n%s", hostsFile, hosts)
 		log.Fatal(err)
 	}
 }

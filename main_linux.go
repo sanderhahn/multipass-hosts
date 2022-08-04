@@ -1,4 +1,7 @@
 package main
 
-const HostsFile = "/etc/hosts"
-const LineBreak = "\n"
+const lineBreak = "\n"
+
+func getHostsFile() string {
+	return "/etc/hosts"
+}
