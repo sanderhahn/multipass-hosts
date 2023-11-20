@@ -3,8 +3,8 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -36,14 +36,14 @@ func (l *multipassList) findIPv4(name string) ([]string, bool) {
 	return nil, false
 }
 
-func execMultipassList() *multipassList {
+func execMultipassList() (list *multipassList, err error) {
 	out, err := exec.Command("multipass", "list", "--format", "json").Output()
 	if err != nil {
-		log.Fatal(err)
+		return nil, fmt.Errorf("failed to run multipass: %w", err)
 	}
-	list := &multipassList{}
-	json.Unmarshal(out, &list)
-	return list
+	list = &multipassList{}
+	err = json.Unmarshal(out, &list)
+	return list, err
 }
 
 func generateBlock(list *multipassList) string {
@@ -61,22 +61,20 @@ func generateBlock(list *multipassList) string {
 	return buf.String()
 }
 
-func readHostsFile() string {
-	hostsFile := getHostsFile()
-	hostsBytes, err := ioutil.ReadFile(hostsFile)
+func readHostsFile() (string, error) {
+	hostsBytes, err := os.ReadFile(hostsFile)
 	if err != nil {
-		log.Fatal(err)
+		return "", fmt.Errorf("failed to read hosts file %q: %w", hostsFile, err)
 	}
-	return string(hostsBytes)
+	return string(hostsBytes), nil
 }
 
-func writeHostsFile(hosts string) {
-	hostsFile := getHostsFile()
-	err := ioutil.WriteFile(hostsFile, []byte(hosts), 0o644)
+func writeHostsFile(hosts string) error {
+	err := os.WriteFile(hostsFile, []byte(hosts), 0o644)
 	if err != nil {
-		log.Printf("Failed to write %s content:\n%s", hostsFile, hosts)
-		log.Fatal(err)
+		return fmt.Errorf("failed to write hosts to %s: %w", hostsFile, err)
 	}
+	return nil
 }
 
 func replaceOrAppendBlock(hosts string, block string) string {
@@ -92,24 +90,23 @@ type config struct {
 	Aliasses map[string][]string `json:"aliasses"`
 }
 
-func readConfig() *config {
-	var config config
+func readConfig() (config config, err error) {
 	home, err := os.UserHomeDir()
 	if err != nil {
-		log.Fatal(err)
+		return config, fmt.Errorf("read config: failed to get user home dir: %w", err)
 	}
-	configBytes, err := ioutil.ReadFile(path.Join(home, configFile))
+	configBytes, err := os.ReadFile(path.Join(home, configFile))
 	if os.IsNotExist(err) {
-		return &config
+		return config, nil
 	}
 	if err != nil {
-		log.Fatal(err)
+		return config, fmt.Errorf("read config: failed to read: %w", err)
 	}
-	json.Unmarshal(configBytes, &config)
-	return &config
+	err = json.Unmarshal(configBytes, &config)
+	return config, err
 }
 
-func expandAliasses(list *multipassList, config *config) *multipassList {
+func expandAliasses(list *multipassList, config config) *multipassList {
 	for name, aliasses := range config.Aliasses {
 		ipv4, ok := list.findIPv4(name)
 		if !ok {
@@ -125,12 +122,36 @@ func expandAliasses(list *multipassList, config *config) *multipassList {
 	return list
 }
 
+var flagPrint = flag.Bool("print", false, "Set to true to print the output to stdout")
+var flagUpdate = flag.Bool("update", true, "Set to false to skip updating the hosts file")
+
 func main() {
-	list := execMultipassList()
-	config := readConfig()
+	flag.Parse()
+
+	list, err := execMultipassList()
+	if err != nil {
+		log.Fatal(err)
+	}
+	config, err := readConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
 	newList := expandAliasses(list, config)
 	block := generateBlock(newList)
-	hosts := readHostsFile()
+	hosts, err := readHostsFile()
+	if err != nil {
+		log.Fatal(err)
+	}
 	newHosts := replaceOrAppendBlock(hosts, block)
-	writeHostsFile(newHosts)
+
+	if *flagPrint {
+		fmt.Println(newHosts)
+	}
+
+	if !*flagUpdate {
+		return
+	}
+	if err = writeHostsFile(newHosts); err != nil {
+		log.Fatal(err)
+	}
 }
