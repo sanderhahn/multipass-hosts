@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path"
+	"runtime"
 	"strings"
 )
 
@@ -16,6 +17,7 @@ const (
 	startMarker = "#multipass-hosts" + lineBreak
 	endMarker   = "#/multipass-hosts" + lineBreak
 	configFile  = ".multipass-hosts.json"
+	binary      = "multipass"
 )
 
 type multipassEntry struct {
@@ -37,7 +39,12 @@ func (l *multipassList) findIPv4(name string) ([]string, bool) {
 }
 
 func execMultipassList() (list *multipassList, err error) {
-	out, err := exec.Command("multipass", "list", "--format", "json").Output()
+	multipass, err := exec.LookPath(binary)
+	if err != nil {
+		log.Fatalf("Please install %s", binary)
+	}
+
+	out, err := exec.Command(multipass, "list", "--format", "json").Output()
 	if err != nil {
 		return nil, fmt.Errorf("failed to run multipass: %w", err)
 	}
@@ -122,6 +129,19 @@ func expandAliasses(list *multipassList, config config) *multipassList {
 	return list
 }
 
+func csrutilStatusEnabled() bool {
+	csrutil, err := exec.LookPath("csrutil")
+	if err != nil {
+		log.Fatal("Failed to run csrutil")
+	}
+
+	out, err := exec.Command(csrutil, "status").Output()
+	if err != nil {
+		log.Fatalf("failed to run csrutil: %w", err)
+	}
+	return strings.Contains(string(out), `enabled`)
+}
+
 var flagPrint = flag.Bool("print", false, "Set to true to print the output to stdout")
 var flagUpdate = flag.Bool("update", true, "Set to false to skip updating the hosts file")
 
@@ -143,6 +163,14 @@ func main() {
 		log.Fatal(err)
 	}
 	newHosts := replaceOrAppendBlock(hosts, block)
+
+	if runtime.GOOS == "darwin" {
+		if csrutilStatusEnabled() {
+			fmt.Fprintf(os.Stderr, "Running on Darwin and csrutil is enabled, so unable to update hosts file\n\n")
+			fmt.Println(newHosts)
+			os.Exit(0)
+		}
+	}
 
 	if *flagPrint {
 		fmt.Println(newHosts)
